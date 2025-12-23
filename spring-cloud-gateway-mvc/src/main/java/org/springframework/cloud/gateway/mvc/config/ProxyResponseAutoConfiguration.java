@@ -16,10 +16,6 @@
 
 package org.springframework.cloud.gateway.mvc.config;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -38,6 +34,10 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+
 /**
  * Autoconfiguration for the {@link ProxyExchange} argument handler in Spring MVC
  * <code>@RequestMapping</code> methods.
@@ -46,7 +46,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
  */
 @Configuration
 @ConditionalOnWebApplication
-@ConditionalOnClass({ HandlerMethodReturnValueHandler.class })
+@ConditionalOnClass({HandlerMethodReturnValueHandler.class})
 @EnableConfigurationProperties(ProxyProperties.class)
 public class ProxyResponseAutoConfiguration extends WebMvcConfigurerAdapter {
 

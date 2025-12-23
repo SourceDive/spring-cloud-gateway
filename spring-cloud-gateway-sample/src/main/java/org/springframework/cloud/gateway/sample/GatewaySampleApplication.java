@@ -17,9 +17,6 @@
 
 package org.springframework.cloud.gateway.sample;
 
-import java.net.URI;
-import java.util.function.Function;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -27,6 +24,9 @@ import org.springframework.cloud.gateway.mvc.ProxyExchange;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.net.URI;
+import java.util.function.Function;
 
 /**
  * @author Spencer Gibb
@@ -39,7 +39,7 @@ public class GatewaySampleApplication {
 	@Value("${remote.home}")
 	private URI home;
 
-	@GetMapping(path="/test", headers="x-host=png.abc.org")
+	@GetMapping(path = "/test", headers = "x-host=png.abc.org")
 	public ResponseEntity<Object> proxy(ProxyExchange<Object> proxy) throws Exception {
 		return proxy.uri(home.toString() + "/image/png")
 				.get(header("X-TestHeader", "foobar"));
@@ -51,7 +51,7 @@ public class GatewaySampleApplication {
 	}
 
 	private Function<ResponseEntity<Object>, ResponseEntity<Object>> header(String key,
-			String value) {
+																			String value) {
 		return response -> ResponseEntity.status(response.getStatusCode())
 				.headers(response.getHeaders()).header(key, value)
 				.body(response.getBody());

@@ -16,32 +16,6 @@
 
 package org.springframework.cloud.gateway.mvc;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Vector;
-import java.util.function.Function;
-
-import javax.servlet.ReadListener;
-import javax.servlet.ServletInputStream;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
-
 import org.springframework.core.Conventions;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ParameterizedTypeReference;
@@ -68,12 +42,30 @@ import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor;
 import org.springframework.web.util.AbstractUriTemplateHandler;
 
+import javax.servlet.ReadListener;
+import javax.servlet.ServletInputStream;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
+import java.util.function.Function;
+
 /**
  * A <code>@RequestMapping</code> argument type that can proxy the request to a backend.
  * Spring will inject one of these into your MVC handler method, and you get return a
  * <code>ResponseEntity</code> that you get from one of the HTTP methods {@link #get()},
  * {@link #post()}, {@link #put()}, {@link #patch()}, {@link #delete()} etc. Example:
- * 
+ *
  * <pre>
  * &#64;GetMapping("/proxy/{id}")
  * public ResponseEntity&lt;?&gt; proxy(@PathVariable Integer id, ProxyExchange&lt;?&gt; proxy)
@@ -81,7 +73,7 @@ import org.springframework.web.util.AbstractUriTemplateHandler;
  * 	return proxy.uri("http://localhost:9000/foos/" + id).get();
  * }
  * </pre>
- * 
+ *
  * <p>
  * By default the incoming request body and headers are sent intact to the downstream
  * service (with the exception of "sensitive" headers). To manipulate the downstream
@@ -102,7 +94,7 @@ import org.springframework.web.util.AbstractUriTemplateHandler;
  * <p>
  * To manipulate the response use the overloaded HTTP methods with a <code>Function</code>
  * argument and pass in code to transform the response. E.g.
- * 
+ *
  * <pre>
  * &#64;PostMapping("/proxy")
  * public ResponseEntity&lt;Foo&gt; proxy(ProxyExchange&lt;Foo&gt; proxy) throws Exception {
@@ -113,9 +105,9 @@ import org.springframework.web.util.AbstractUriTemplateHandler;
  * 					.body(response.getBody()) //
  * 	);
  * }
- * 
+ *
  * </pre>
- * 
+ *
  * </p>
  * <p>
  * The full machinery of Spring {@link HttpMessageConverter message converters} is applied
@@ -129,7 +121,7 @@ import org.springframework.web.util.AbstractUriTemplateHandler;
  * As well as the HTTP methods for a backend call you can also use
  * {@link #forward(String)} for a local in-container dispatch.
  * </p>
- * 
+ *
  * @author Dave Syer
  *
  */
@@ -159,8 +151,8 @@ public class ProxyExchange<T> {
 	private Type responseType;
 
 	public ProxyExchange(RestTemplate rest, NativeWebRequest webRequest,
-			ModelAndViewContainer mavContainer, WebDataBinderFactory binderFactory,
-			Type type) {
+						 ModelAndViewContainer mavContainer, WebDataBinderFactory binderFactory,
+						 Type type) {
 		this.responseType = type;
 		this.rest = createTemplate(rest);
 		this.webRequest = webRequest;
@@ -176,7 +168,7 @@ public class ProxyExchange<T> {
 	 * request downstream without changing it. If you want to transform the incoming
 	 * request you can declare it as a <code>@RequestBody</code> in your
 	 * <code>@RequestMapping</code> in the usual Spring MVC way.
-	 * 
+	 *
 	 * @param body the request body to send downstream
 	 * @return this for convenience
 	 */
@@ -187,7 +179,7 @@ public class ProxyExchange<T> {
 
 	/**
 	 * Sets a header for the downstream call.
-	 * 
+	 *
 	 * @param name
 	 * @param value
 	 * @return this for convenience
@@ -200,7 +192,7 @@ public class ProxyExchange<T> {
 	/**
 	 * Additional headers, or overrides of the incoming ones, to be used in the downstream
 	 * call.
-	 * 
+	 *
 	 * @param headers the http headers to use in the downstream call
 	 * @return this for convenience
 	 */
@@ -212,7 +204,7 @@ public class ProxyExchange<T> {
 	/**
 	 * Sets the names of sensitive headers that are not passed downstream to the backend
 	 * service.
-	 * 
+	 *
 	 * @param names the names of sensitive headers
 	 * @return this for convenience
 	 */
@@ -228,15 +220,14 @@ public class ProxyExchange<T> {
 
 	/**
 	 * Sets the uri for the backend call when triggered by the HTTP methods.
-	 * 
+	 *
 	 * @param uri the backend uri to send the request to
 	 * @return this for convenience
 	 */
 	public ProxyExchange<T> uri(String uri) {
 		try {
 			this.uri = new URI(uri);
-		}
-		catch (URISyntaxException e) {
+		} catch (URISyntaxException e) {
 			throw new IllegalStateException("Cannot create URI", e);
 		}
 		return this;
@@ -265,8 +256,7 @@ public class ProxyExchange<T> {
 		try {
 			request.getRequestDispatcher(path).forward(
 					new BodyForwardingHttpServletRequest(request, response), response);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			throw new IllegalStateException("Cannot forward request", e);
 		}
 	}
@@ -382,8 +372,7 @@ public class ProxyExchange<T> {
 					.getRequestURL().toString());
 			appendForwarded(uri);
 			appendXForwarded(uri);
-		}
-		catch (URISyntaxException e) {
+		} catch (URISyntaxException e) {
 			throw new IllegalStateException("Cannot create URI for request: " + webRequest
 					.getNativeRequest(HttpServletRequest.class).getRequestURL());
 		}
@@ -395,13 +384,13 @@ public class ProxyExchange<T> {
 		if (host == null) {
 			return;
 		}
-		host = host + ","  + uri.getHost();
+		host = host + "," + uri.getHost();
 		headers.set("x-forwarded-host", host);
 		String proto = headers.getFirst("x-forwarded-proto");
 		if (proto == null) {
 			return;
 		}
-		proto = proto + ","  + uri.getScheme();
+		proto = proto + "," + uri.getScheme();
 		headers.set("x-forwarded-proto", proto);
 	}
 
@@ -435,7 +424,7 @@ public class ProxyExchange<T> {
 	 * Search for the request body if it was already deserialized using
 	 * <code>@RequestBody</code>. If it is not found then deserialize it in the same way
 	 * that it would have been for a <code>@RequestBody</code>.
-	 * 
+	 *
 	 * @return the request body
 	 */
 	private Object getRequestBody() {
@@ -449,8 +438,7 @@ public class ProxyExchange<T> {
 				ClassUtils.getMethod(BodyGrabber.class, "body", Object.class), 0);
 		try {
 			delegate.resolveArgument(input, mavContainer, webRequest, binderFactory);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			throw new IllegalStateException("Cannot resolve body", e);
 		}
 		String name = Conventions.getVariableNameForParameter(input);
@@ -480,7 +468,7 @@ public class ProxyExchange<T> {
 	class NestedTemplate extends RestTemplate {
 		@Override
 		protected <S> RequestCallback httpEntityCallback(Object requestBody,
-				Type responseType) {
+														 Type responseType) {
 			return super.httpEntityCallback(requestBody, responseType);
 		}
 
@@ -502,7 +490,7 @@ public class ProxyExchange<T> {
 		private HttpServletResponse response;
 
 		BodyForwardingHttpServletRequest(HttpServletRequest request,
-				HttpServletResponse response) {
+										 HttpServletResponse response) {
 			super(request);
 			this.request = request;
 			this.response = response;
@@ -523,9 +511,8 @@ public class ProxyExchange<T> {
 			ServletWebRequest webRequest = new ServletWebRequest(this.request, response);
 			try {
 				delegate.handleReturnValue(body, output, mavContainer, webRequest);
-			}
-			catch (HttpMessageNotWritableException
-					| HttpMediaTypeNotAcceptableException e) {
+			} catch (HttpMessageNotWritableException
+					 | HttpMediaTypeNotAcceptableException e) {
 				throw new IllegalStateException("Cannot convert body", e);
 			}
 			return response.getInputStream();
@@ -583,7 +570,7 @@ public class ProxyExchange<T> {
  * will need to be read and analysed more than once. Apart from using the message
  * converters the other main feature of this class is that the request body is cached and
  * can be read repeatedly as necessary.
- * 
+ *
  * @author Dave Syer
  *
  */
